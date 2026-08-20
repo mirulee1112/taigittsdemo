@@ -190,6 +190,46 @@ footer { padding: 20px 28px 100px; color: var(--text-muted); font-size: 12px; }
 </head>
 <body>
 
+<div id="pw-gate" style="position:fixed;inset:0;z-index:9999;background:#111;color:#eee;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,'PingFang TC','Microsoft JhengHei',sans-serif;">
+  <form id="pw-form" style="background:#1c1c1c;padding:32px 28px;border-radius:12px;width:min(90vw,320px);box-shadow:0 8px 30px rgba(0,0,0,.4);text-align:center;">
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px;">請輸入密碼以檢視內容</div>
+    <input id="pw-input" type="password" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid #444;background:#111;color:#eee;font-size:14px;margin-bottom:12px;" />
+    <button type="submit" style="width:100%;padding:10px 12px;border-radius:8px;border:none;background:#4f7cff;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">送出</button>
+    <div id="pw-err" style="color:#ff6b6b;font-size:12.5px;margin-top:10px;display:none;">密碼錯誤，請再試一次</div>
+  </form>
+</div>
+<script>
+(function(){
+  var GATE_HASH = "0bbb586b2b194f233319c641ef56814dda0e0b476b6d3ed2f8be92f0b65be393";
+  var STORE_KEY = "taigi_tts_pw_ok";
+  var gate = document.getElementById('pw-gate');
+
+  function sha256Hex(text){
+    var enc = new TextEncoder().encode(text);
+    return crypto.subtle.digest('SHA-256', enc).then(function(buf){
+      return Array.prototype.map.call(new Uint8Array(buf), function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    });
+  }
+
+  if (localStorage.getItem(STORE_KEY) === GATE_HASH) {
+    gate.style.display = 'none';
+  } else {
+    document.getElementById('pw-form').addEventListener('submit', function(e){
+      e.preventDefault();
+      var val = document.getElementById('pw-input').value;
+      sha256Hex(val).then(function(hex){
+        if (hex === GATE_HASH) {
+          localStorage.setItem(STORE_KEY, GATE_HASH);
+          gate.style.display = 'none';
+        } else {
+          document.getElementById('pw-err').style.display = 'block';
+        }
+      });
+    });
+  }
+})();
+</script>
+
 <header class="top">
   <div>
     <h1>台語語音生成總覽</h1>
