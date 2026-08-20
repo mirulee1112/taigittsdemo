@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>台語語音生成總覽</title>
+<style>
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --surface-2: #eceef2; --border: #d7dbe2;
+  --text: #1a1d24; --text-muted: #5b6270; --accent: #c8722e; --accent-ink: #ffffff;
+  --series-vox: #1f8a8c; --series-vox-bg: #e3f3f2;
+  --series-barbet: #c04a5c; --series-barbet-bg: #fbe8ea;
+  --series-cosy: #7c5cbf; --series-cosy-bg: #efe9fa;
+  --focus: #c8722e;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171c; --surface: #1b1f26; --surface-2: #232833; --border: #313846;
+    --text: #e8eaef; --text-muted: #9aa3b2; --accent: #e0975a; --accent-ink: #1a1206;
+    --series-vox: #4fd0d2; --series-vox-bg: #163536;
+    --series-barbet: #ef7b8a; --series-barbet-bg: #3a1f24;
+    --series-cosy: #a98ee0; --series-cosy-bg: #2a2338;
+    --focus: #e0975a;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.6 -apple-system, "SF Pro Text", "Segoe UI", "PingFang TC", "Noto Sans TC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace; }
+header.top {
+  position: sticky; top: 0; z-index: 10; background: var(--surface);
+  border-bottom: 1px solid var(--border); padding: 20px 28px 16px;
+}
+h1 {
+  margin: 0; font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 20px; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance;
+}
+.subtitle { margin: 4px 0 0; color: var(--text-muted); font-size: 13px; }
+.stats { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.stat-chip {
+  display: flex; align-items: center; gap: 8px; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+}
+.stat-chip .swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.stat-chip .count { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 15px; }
+.stat-chip .label { color: var(--text-muted); font-size: 12px; }
+.stat-chip.total { background: var(--surface); border-color: var(--accent); }
+.stat-chip.total .count { color: var(--accent); }
+
+.controls {
+  position: sticky; top: var(--header-h, 89px); z-index: 9; background: var(--bg);
+  border-bottom: 1px solid var(--border); padding: 12px 28px;
+  display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
+}
+.filter-group { display: flex; gap: 6px; align-items: center; }
+.filter-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-right: 4px; }
+.toggle {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
+  border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; gap: 6px; transition: background .12s, color .12s, border-color .12s;
+  font-family: inherit;
+}
+.toggle .dot { width: 7px; height: 7px; border-radius: 50%; }
+.toggle:hover { border-color: var(--text-muted); }
+.toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.toggle.active { background: var(--tone-bg, var(--surface-2)); color: var(--tone, var(--text)); border-color: var(--tone, var(--border)); }
+#search {
+  flex: 1; min-width: 180px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 12px; color: var(--text); font-size: 13px; font-family: inherit;
+}
+#search:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+#search::placeholder { color: var(--text-muted); }
+.result-count { font-size: 12.5px; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.tabs { display: flex; gap: 4px; margin-top: 16px; }
+.tab-btn {
+  border: none; background: none; color: var(--text-muted); font: inherit; font-weight: 600;
+  font-size: 13px; padding: 8px 4px; cursor: pointer; border-bottom: 2px solid transparent;
+  margin-right: 16px;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-panel[hidden] { display: none; }
+
+.text-ref { padding: 20px 28px 100px; display: flex; flex-direction: column; gap: 20px; max-width: 1100px; }
+.text-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px;
+}
+.text-card h2 {
+  margin: 0 0 14px; font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 15px; font-weight: 700; color: var(--accent);
+}
+.text-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.text-cols.single { grid-template-columns: 1fr; max-width: 620px; }
+@media (max-width: 720px) { .text-cols { grid-template-columns: 1fr; } }
+.text-card-note { margin: -6px 0 14px; font-size: 12.5px; color: var(--text-muted); line-height: 1.7; }
+.text-col-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted);
+  margin-bottom: 8px; font-weight: 700;
+}
+.text-col p { margin: 0; font-size: 14.5px; line-height: 1.9; color: var(--text); text-wrap: pretty; }
+
+.multiselect { position: relative; }
+.ms-toggle {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 8px; padding: 6px 10px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; gap: 6px; font-family: inherit;
+}
+.ms-toggle:hover { border-color: var(--text-muted); }
+.ms-toggle .ms-badge {
+  background: var(--surface-2); color: var(--text-muted); border-radius: 999px;
+  padding: 1px 7px; font-size: 11px; font-variant-numeric: tabular-nums;
+}
+.ms-toggle.filtered .ms-badge { background: var(--accent); color: var(--accent-ink); }
+.ms-panel {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; min-width: 220px; max-height: 320px;
+  overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.14);
+}
+.ms-panel-actions { display: flex; gap: 8px; padding: 2px 4px 8px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+.ms-panel-actions button {
+  background: none; border: none; color: var(--accent); font-size: 11.5px; cursor: pointer; padding: 0;
+  font-family: inherit; font-weight: 600;
+}
+.ms-option {
+  display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 6px; cursor: pointer;
+  font-size: 12.5px;
+}
+.ms-option:hover { background: var(--surface-2); }
+.ms-option input { accent-color: var(--accent); }
+.ms-option .opt-count { margin-left: auto; color: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+main { padding: 4px 28px 100px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; margin-top: 14px; }
+table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: 13px; }
+thead th {
+  background: var(--surface-2); text-align: left; padding: 9px 12px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted);
+  border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap;
+}
+thead th:hover { color: var(--text); }
+thead th .arrow { opacity: .4; margin-left: 3px; }
+thead th.sorted .arrow { opacity: 1; color: var(--accent); }
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface-2); }
+tbody tr.playing { background: var(--surface-2); }
+td { padding: 7px 12px; vertical-align: middle; white-space: nowrap; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 7px; border-radius: 999px;
+  font-weight: 700; font-size: 12px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+.badge .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+.play-btn {
+  width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); cursor: pointer; display: inline-flex;
+  align-items: center; justify-content: center; font-size: 11px; padding: 0; flex-shrink: 0;
+}
+.play-btn:hover { border-color: var(--accent); color: var(--accent); }
+.play-btn.is-playing { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.play-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.check { display: none; color: var(--accent); font-weight: 700; font-size: 13px; margin-left: 6px; }
+tr.playing .check { display: inline; }
+
+.empty-state { padding: 60px 20px; text-align: center; color: var(--text-muted); }
+.legend {
+  margin-top: 16px; padding: 12px 16px; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; font-size: 12px; color: var(--text-muted); line-height: 1.7;
+}
+.legend b { color: var(--text); }
+footer { padding: 20px 28px 100px; color: var(--text-muted); font-size: 12px; }
+
+.player-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface);
+  border-top: 1px solid var(--border); padding: 12px 28px; display: flex; align-items: center;
+  gap: 14px; box-shadow: 0 -4px 16px rgba(0,0,0,.08); transform: translateY(100%);
+  transition: transform .18s ease;
+}
+.player-bar.visible { transform: translateY(0); }
+.player-bar .now-playing { flex: 1; min-width: 0; }
+.player-bar .np-title { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-bar .np-sub { color: var(--text-muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-bar audio { flex: 2; min-width: 200px; height: 36px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>台語語音生成總覽</h1>
+    <p class="subtitle">VoxCPM2 / Barbet / CosyVoice3 三套引擎 · 華語與台語漢字版本 · 點左側 ▶ 直接播放</p>
+  </div>
+  <div class="stats" id="stats"></div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="list">音檔列表</button>
+    <button class="tab-btn" data-tab="text">文本對照</button>
+  </nav>
+</header>
+
+<section id="tab-list" class="tab-panel">
+<div class="controls">
+  <div class="filter-group" id="series-filters"><span class="filter-label">系列</span></div>
+  <div class="filter-group" id="lang-filters"><span class="filter-label">語言</span></div>
+  <div class="multiselect" id="model-filter"></div>
+  <div class="multiselect" id="param-filter"></div>
+  <input id="search" type="text" placeholder="搜尋文本／模型／參數…">
+  <span class="result-count" id="result-count"></span>
+</div>
+
+<main>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th data-key="series">系列<span class="arrow">↕</span></th>
+          <th data-key="lang">語言<span class="arrow">↕</span></th>
+          <th data-key="text">文本<span class="arrow">↕</span></th>
+          <th data-key="model">模型 / LLM<span class="arrow">↕</span></th>
+          <th data-key="param">參數<span class="arrow">↕</span></th>
+          <th data-key="seed">Seed<span class="arrow">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="legend">
+    <b>圖例</b>：CFG／DIT 適用於 VoxCPM2、Barbet；聲音（489女聲／680男聲）＋Seed 適用於 CosyVoice3。
+    「氣象」（CosyVoice3）與「新聞」（VoxCPM2／Barbet）為同一段文本內容，命名沿用各自批次當時的說法。
+    CFG1.0 目前多數組合暫緩生成（2026-08-15 拍板，伺服器端逾時問題），僅列出當時已成功產出的少量檔案。
+    CosyVoice3 的 <span class="mono">llm_v3a_ep5</span> checkpoint 因伺服器端載入錯誤已排除，未列入本表。
+    1139男聲、V6、V7 為 2026-08-18 新增；小王子也是這批新加的內容，只有台語版本沒有華語對照（原本另外附的2筆手動樣本已移除）。
+  </div>
+</main>
+</section>
+
+<section id="tab-text" class="tab-panel" hidden>
+  <div class="text-ref">
+
+    <article class="text-card">
+      <h2>三國演義</h2>
+      <div class="text-cols">
+        <div class="text-col">
+          <div class="text-col-label">華語</div>
+          <p>過了幾年，劉備打了敗仗，暫時投靠曹操，住在許昌城裡。曹操表面上對他很好，其實心裡一直提防著他，擔心這個人以後會成為心腹大患。玄德為了保護自己，每天都在後院種菜，故意裝出一副胸無大志的樣子，好讓曹操放心。</p>
+        </div>
+        <div class="text-col">
+          <div class="text-col-label">台語漢字</div>
+          <p>過幾年了後，劉備拍輸仗，暫時去倚靠曹操，蹛佇許昌城內。曹操表面上對伊真好，其實心內一直咧提防伊，煩惱這个人以後會變做心腹大患。玄德為著愛保護家己，逐工攏佇後院種菜，故意假仙做出一副無雄心大志的款，好予曹操放心。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="text-card">
+      <h2>紅樓夢</h2>
+      <div class="text-cols">
+        <div class="text-col">
+          <div class="text-col-label">華語</div>
+          <p>「反正很多東西都是人編出來的,這有什麼關係？」黛玉聽著這番孩子氣的對話，忍不住抿嘴笑了，一路上緊繃的心情，竟然被這個第一次見面的表哥，三兩句話就說得輕鬆不少。賈寶玉接著又問黛玉有沒有玉，聽說她沒有，臉色忽然一沉，竟然賭氣把自己脖子上戴的那塊通靈寶玉一把摘下來，狠狠摔在地上。</p>
+        </div>
+        <div class="text-col">
+          <div class="text-col-label">台語漢字</div>
+          <p>「反正真濟物件攏是人編出來的，這有啥物要緊？」黛玉聽著這款囡仔氣的話，袂當家己忍咧，笑微微。一路頂懸絚絚的心情，竟然予這个第一擺見面的表兄，三兩句話就講甲較輕鬆矣。賈寶玉紲落去閣問黛玉有無帶玉，聽講伊無，面色忽然變甲真䆀，竟然使性地共伊頷頸仔戴的彼塊通靈寶玉一下挽落來，用力摔佇塗跤。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="text-card">
+      <h2>氣象／新聞</h2>
+      <div class="text-cols">
+        <div class="text-col">
+          <div class="text-col-label">華語</div>
+          <p>受到西南風及充沛水氣影響，迎風面的南部雨勢最明顯，尤其山區可能出現較多累積雨量；中部以北則受到午後熱力作用影響，平地、山區都有降雨機會。氣象專家林得恩提醒，近期不只午後會下雨，清晨、傍晚也可能因局部輻合出現短暫陣雨，外出最好隨身攜帶雨具。</p>
+        </div>
+        <div class="text-col">
+          <div class="text-col-label">台語漢字</div>
+          <p>受著西南風及充沛的水氣影響，向風面的南部雨勢上明顯，特別是山區可能會落較濟的雨量；中部以北則是受著下晡熱力作用的影響，平地、山區攏有落雨的機會。氣象專家林得恩提醒，近來毋但下晡會落雨，透早、暗時仔嘛有可能因為局部輻合出現短暫的陣雨，出門上好紮雨具佇身軀邊。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="text-card">
+      <h2>小王子台語</h2>
+      <p class="text-card-note">只有台語版本，沒有對應的華語版。</p>
+      <div class="text-cols single">
+        <div class="text-col">
+          <div class="text-col-label">台語漢字</div>
+          <p>頭一暝我佇偏僻的沙漠中睏去，四箍輾轉攏無半个人影。我比跋落海浮佇竹棑仔頂懸的人閣較孤單。透早天拄光的時陣，去予一个足細的聲音共我吵精神，恁免想嘛知影我有偌驚惶。伊講：「請你畫一隻羊仔予我！」</p>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<footer>共 460 筆生成紀錄 · 本檔需跟「聲音/測試聲音」資料夾維持相對位置才能播放 · 最後更新 2026-08-18</footer>
+
+<div class="player-bar" id="player-bar">
+  <div class="now-playing">
+    <div class="np-title" id="np-title">—</div>
+    <div class="np-sub" id="np-sub">—</div>
+  </div>
+  <audio id="audio" controls></audio>
+</div>
+
+<script id="data" type="application/json">[{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG1.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e1.6-0801_CFG1.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG1.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.0-0803_CFG1.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/lora-r32-mixed-e7.6-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/lora-r32-mixed-e7.6-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/lora-r32-mixed-e7.6-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/lora-r32-mixed-e7.6-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/lora-r32-mixed-e7.6-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義/lora-r32-mixed-e7.6-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/lora-r32-mixed-e7.6-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/lora-r32-mixed-e7.6-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/lora-r32-mixed-e7.6-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/lora-r32-mixed-e7.6-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/lora-r32-mixed-e7.6-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"新聞","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/新聞/lora-r32-mixed-e7.6-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/lora-r32-mixed-e7.6-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/lora-r32-mixed-e7.6-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/lora-r32-mixed-e7.6-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/lora-r32-mixed-e7.6-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/lora-r32-mixed-e7.6-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"華語","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢/lora-r32-mixed-e7.6-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"三國演義","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/三國演義台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"小王子","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/小王子台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"氣象","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/氣象台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e1.6-0801_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e1.6-0801","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e1.6-0801_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.0-0803_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.0-0803","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.0-0803_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.3-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"ft-mixed-lr1e5-e2.3-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/ft-mixed-lr1e5-e2.3-0731_CFG3.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG2.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/lora-r32-mixed-e7.6-0731_CFG2.0_DIT30.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT10","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT10.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT20","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT20.wav"},{"series":"VoxCPM2","lang":"台語漢字","text":"紅樓夢","model":"lora-r32-mixed-e7.6-0731","param":"CFG3.0/DIT30","seed":"","rel":"VoxCPM2_mix系列批次生成/紅樓夢台語/lora-r32-mixed-e7.6-0731_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG1.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-cent-mixed-e12-ep12-0810_CFG1.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG1.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-e12-ep12-0811_CFG1.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG1.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-lr5e5-e0.9-0804_CFG1.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG1.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-mixedval-e2.0-0804_CFG1.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG1.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-cent-mixed-e12-ep12-0810_CFG1.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG1.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-e12-ep12-0811_CFG1.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG1.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-mixedval-e2.0-0804_CFG1.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"新聞","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/新聞/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG1.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-cent-mixed-e12-ep12-0810_CFG1.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG1.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-e12-ep12-0811_CFG1.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG1.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-mixedval-e2.0-0804_CFG1.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"華語","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"三國演義","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/三國演義台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"小王子","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/小王子台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"氣象","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/氣象台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-cent-mixed-e12-ep12-0810_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-cent-mixed-e12-ep12-0810","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-cent-mixed-e12-ep12-0810_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-e12-ep12-0811_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-e12-ep12-0811","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-e12-ep12-0811_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-lr5e5-e0.9-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-lr5e5-e0.9-0804_CFG3.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG2.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG2.0_DIT30.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT10","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT10.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT20","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT20.wav"},{"series":"Barbet","lang":"台語漢字","text":"紅樓夢","model":"bm-tslm-mixed-mixedval-e2.0-0804","param":"CFG3.0/DIT30","seed":"","rel":"Barbet_mix系列批次生成/紅樓夢台語/bm-tslm-mixed-mixedval-e2.0-0804_CFG3.0_DIT30.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V3a-best","param":"1139男聲","seed":"2031159563","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V3a-best_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V3a-best","param":"489女聲","seed":"1642084773","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V3a-best_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V3a-best","param":"680男聲","seed":"834478132","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V3a-best_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V3g","param":"1139男聲","seed":"609158270","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V3g_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V3g","param":"489女聲","seed":"1252955513","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V3g_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V3g","param":"680男聲","seed":"1227830478","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V3g_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V4","param":"1139男聲","seed":"790008139","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V4_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V4","param":"489女聲","seed":"1211324018","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V4_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V4","param":"680男聲","seed":"470869254","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V4_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V5","param":"1139男聲","seed":"1337668148","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V5_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V5","param":"489女聲","seed":"1014819797","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V5_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V5","param":"680男聲","seed":"1775788735","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V5_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V6","param":"1139男聲","seed":"1218227056","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V6_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V6","param":"489女聲","seed":"1839464165","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V6_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V7","param":"1139男聲","seed":"1767493736","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V7_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"三國演義","model":"V7","param":"489女聲","seed":"836128870","rel":"CosyVoice3_台語試聽台批次生成/三國演義/V7_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V3a-best","param":"1139男聲","seed":"1173301618","rel":"CosyVoice3_台語試聽台批次生成/氣象/V3a-best_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V3a-best","param":"489女聲","seed":"769033155","rel":"CosyVoice3_台語試聽台批次生成/氣象/V3a-best_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V3a-best","param":"680男聲","seed":"1569149242","rel":"CosyVoice3_台語試聽台批次生成/氣象/V3a-best_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V3g","param":"1139男聲","seed":"179164848","rel":"CosyVoice3_台語試聽台批次生成/氣象/V3g_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V3g","param":"489女聲","seed":"1545582107","rel":"CosyVoice3_台語試聽台批次生成/氣象/V3g_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V3g","param":"680男聲","seed":"1888804113","rel":"CosyVoice3_台語試聽台批次生成/氣象/V3g_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V4","param":"1139男聲","seed":"1869501469","rel":"CosyVoice3_台語試聽台批次生成/氣象/V4_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V4","param":"489女聲","seed":"264838133","rel":"CosyVoice3_台語試聽台批次生成/氣象/V4_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V4","param":"680男聲","seed":"674513524","rel":"CosyVoice3_台語試聽台批次生成/氣象/V4_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V5","param":"1139男聲","seed":"515884909","rel":"CosyVoice3_台語試聽台批次生成/氣象/V5_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V5","param":"489女聲","seed":"646346609","rel":"CosyVoice3_台語試聽台批次生成/氣象/V5_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V5","param":"680男聲","seed":"2120947794","rel":"CosyVoice3_台語試聽台批次生成/氣象/V5_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V6","param":"1139男聲","seed":"1031318576","rel":"CosyVoice3_台語試聽台批次生成/氣象/V6_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V6","param":"489女聲","seed":"1672547321","rel":"CosyVoice3_台語試聽台批次生成/氣象/V6_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V7","param":"1139男聲","seed":"1867638148","rel":"CosyVoice3_台語試聽台批次生成/氣象/V7_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"氣象","model":"V7","param":"489女聲","seed":"1969066380","rel":"CosyVoice3_台語試聽台批次生成/氣象/V7_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V3a-best","param":"1139男聲","seed":"1997947005","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V3a-best_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V3a-best","param":"489女聲","seed":"1092857039","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V3a-best_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V3a-best","param":"680男聲","seed":"1705227228","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V3a-best_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V3g","param":"1139男聲","seed":"2009205994","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V3g_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V3g","param":"489女聲","seed":"1221510178","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V3g_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V3g","param":"680男聲","seed":"1664361170","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V3g_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V4","param":"1139男聲","seed":"1932716299","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V4_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V4","param":"489女聲","seed":"1732530491","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V4_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V4","param":"680男聲","seed":"490579739","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V4_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V5","param":"1139男聲","seed":"2065031727","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V5_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V5","param":"489女聲","seed":"2041016364","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V5_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V5","param":"680男聲","seed":"1600116504","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V5_680男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V6","param":"1139男聲","seed":"745766834","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V6_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V6","param":"489女聲","seed":"161444158","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V6_489女聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V7","param":"1139男聲","seed":"1189412086","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V7_1139男聲.wav"},{"series":"CosyVoice3","lang":"華語","text":"紅樓夢","model":"V7","param":"489女聲","seed":"1784431532","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢/V7_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V3a-best","param":"1139男聲","seed":"1530039626","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V3a-best_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V3a-best","param":"489女聲","seed":"563145440","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V3a-best_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V3a-best","param":"680男聲","seed":"2041889757","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V3a-best_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V3g","param":"1139男聲","seed":"1850658548","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V3g_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V3g","param":"489女聲","seed":"66921314","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V3g_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V3g","param":"680男聲","seed":"803304667","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V3g_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V4","param":"1139男聲","seed":"1742756909","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V4_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V4","param":"489女聲","seed":"413312897","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V4_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V4","param":"680男聲","seed":"51619655","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V4_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V5","param":"1139男聲","seed":"1174221910","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V5_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V5","param":"489女聲","seed":"1622323469","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V5_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V5","param":"680男聲","seed":"1881297143","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V5_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V6","param":"1139男聲","seed":"316216236","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V6_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V6","param":"489女聲","seed":"1420200644","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V6_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V7","param":"1139男聲","seed":"213790363","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V7_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"三國演義","model":"V7","param":"489女聲","seed":"1382939099","rel":"CosyVoice3_台語試聽台批次生成/三國演義台語/V7_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V3a-best","param":"1139男聲","seed":"102423107","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V3a-best_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V3a-best","param":"489女聲","seed":"1734768790","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V3a-best_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V3a-best","param":"680男聲","seed":"1803661405","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V3a-best_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V3g","param":"1139男聲","seed":"442560868","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V3g_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V3g","param":"489女聲","seed":"912156692","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V3g_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V3g","param":"680男聲","seed":"1982191633","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V3g_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V4","param":"1139男聲","seed":"1020142093","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V4_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V4","param":"489女聲","seed":"1914062125","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V4_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V4","param":"680男聲","seed":"2834642","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V4_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V5","param":"1139男聲","seed":"1937008739","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V5_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V5","param":"489女聲","seed":"811538562","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V5_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V5","param":"680男聲","seed":"1286932745","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V5_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V6","param":"1139男聲","seed":"849224289","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V6_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V6","param":"489女聲","seed":"18346568","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V6_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V7","param":"1139男聲","seed":"52154991","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V7_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"小王子","model":"V7","param":"489女聲","seed":"755136693","rel":"CosyVoice3_台語試聽台批次生成/小王子台語/V7_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V3a-best","param":"1139男聲","seed":"775940870","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V3a-best_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V3a-best","param":"489女聲","seed":"1359431137","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V3a-best_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V3a-best","param":"680男聲","seed":"826874278","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V3a-best_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V3g","param":"1139男聲","seed":"1512700551","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V3g_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V3g","param":"489女聲","seed":"957102230","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V3g_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V3g","param":"680男聲","seed":"2106699089","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V3g_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V4","param":"1139男聲","seed":"401829241","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V4_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V4","param":"489女聲","seed":"243475450","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V4_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V4","param":"680男聲","seed":"1289338539","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V4_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V5","param":"1139男聲","seed":"1318054267","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V5_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V5","param":"489女聲","seed":"640748301","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V5_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V5","param":"680男聲","seed":"1385819688","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V5_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V6","param":"1139男聲","seed":"1502288427","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V6_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V6","param":"489女聲","seed":"1244429294","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V6_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V7","param":"1139男聲","seed":"602902548","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V7_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"氣象","model":"V7","param":"489女聲","seed":"1409152219","rel":"CosyVoice3_台語試聽台批次生成/氣象台語/V7_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V3a-best","param":"1139男聲","seed":"1554300731","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V3a-best_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V3a-best","param":"489女聲","seed":"867851658","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V3a-best_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V3a-best","param":"680男聲","seed":"1697383453","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V3a-best_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V3g","param":"1139男聲","seed":"879785179","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V3g_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V3g","param":"489女聲","seed":"29684888","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V3g_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V3g","param":"680男聲","seed":"2054338698","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V3g_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V4","param":"1139男聲","seed":"2139024901","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V4_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V4","param":"489女聲","seed":"1610914098","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V4_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V4","param":"680男聲","seed":"1284464178","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V4_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V5","param":"1139男聲","seed":"1095305481","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V5_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V5","param":"489女聲","seed":"1515252458","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V5_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V5","param":"680男聲","seed":"1278331246","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V5_680男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V6","param":"1139男聲","seed":"1873003012","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V6_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V6","param":"489女聲","seed":"1992143123","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V6_489女聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V7","param":"1139男聲","seed":"1277060178","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V7_1139男聲.wav"},{"series":"CosyVoice3","lang":"台語漢字","text":"紅樓夢","model":"V7","param":"489女聲","seed":"1907417523","rel":"CosyVoice3_台語試聽台批次生成/紅樓夢台語/V7_489女聲.wav"}]</script>
+<script>
+const records = JSON.parse(document.getElementById('data').textContent);
+
+const SERIES = [
+  { key: 'VoxCPM2', tone: 'var(--series-vox)', bg: 'var(--series-vox-bg)' },
+  { key: 'Barbet', tone: 'var(--series-barbet)', bg: 'var(--series-barbet-bg)' },
+  { key: 'CosyVoice3', tone: 'var(--series-cosy)', bg: 'var(--series-cosy-bg)' },
+];
+const LANGS = ['華語', '台語漢字'];
+const activeSeries = new Set(SERIES.map(s => s.key));
+const activeLangs = new Set(LANGS);
+
+const ALL_MODELS = [...new Set(records.map(r => r.model))].sort();
+const ALL_PARAMS = [...new Set(records.map(r => r.param))].sort();
+const activeModels = new Set(ALL_MODELS);
+const activeParams = new Set(ALL_PARAMS);
+
+let sortKey = 'series';
+let sortDir = 1;
+let currentPlayBtn = null;
+let currentRow = null;
+
+// 通用多選下拉：containerId 是外層 .multiselect 容器、label 是按鈕文字、
+// allValues 是全部選項、activeSet 是目前勾選中的值（預設全選＝不篩選）。
+function buildMultiselect(containerId, label, allValues, activeSet) {
+  const root = document.getElementById(containerId);
+  const toggle = document.createElement('button');
+  toggle.className = 'ms-toggle';
+  toggle.type = 'button';
+  const updateToggleLabel = () => {
+    const filtered = activeSet.size < allValues.length;
+    toggle.classList.toggle('filtered', filtered);
+    const badgeText = filtered ? `${activeSet.size}/${allValues.length}` : '全部';
+    toggle.innerHTML = `${label}<span class="ms-badge">${badgeText}</span>`;
+  };
+  updateToggleLabel();
+
+  const panel = document.createElement('div');
+  panel.className = 'ms-panel';
+  panel.hidden = true;
+
+  const actions = document.createElement('div');
+  actions.className = 'ms-panel-actions';
+  actions.innerHTML = `<button type="button" data-act="all">全選</button><button type="button" data-act="none">全不選</button>`;
+  actions.querySelector('[data-act="all"]').onclick = () => {
+    allValues.forEach(v => activeSet.add(v));
+    panel.querySelectorAll('input').forEach(cb => cb.checked = true);
+    updateToggleLabel(); render();
+  };
+  actions.querySelector('[data-act="none"]').onclick = () => {
+    activeSet.clear();
+    panel.querySelectorAll('input').forEach(cb => cb.checked = false);
+    updateToggleLabel(); render();
+  };
+  panel.appendChild(actions);
+
+  for (const v of allValues) {
+    const opt = document.createElement('label');
+    opt.className = 'ms-option';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = true;
+    cb.addEventListener('change', () => {
+      if (cb.checked) activeSet.add(v); else activeSet.delete(v);
+      updateToggleLabel(); render();
+    });
+    opt.appendChild(cb);
+    opt.appendChild(document.createTextNode(v));
+    panel.appendChild(opt);
+  }
+
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.ms-panel').forEach(p => { if (p !== panel) p.hidden = true; });
+    panel.hidden = !panel.hidden;
+  });
+  root.appendChild(toggle);
+  root.appendChild(panel);
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.multiselect')) {
+    document.querySelectorAll('.ms-panel').forEach(p => p.hidden = true);
+  }
+});
+
+function seriesTone(key) {
+  return SERIES.find(s => s.key === key) || { tone: 'var(--text-muted)', bg: 'var(--surface-2)' };
+}
+
+function buildStats() {
+  const statsEl = document.getElementById('stats');
+  let html = `<div class="stat-chip total"><span class="count">${records.length}</span><span class="label">全部</span></div>`;
+  for (const s of SERIES) {
+    for (const lang of LANGS) {
+      const n = records.filter(r => r.series === s.key && r.lang === lang).length;
+      if (n === 0) continue;
+      html += `<div class="stat-chip"><span class="swatch" style="background:${s.tone}"></span><span class="count">${n}</span><span class="label">${s.key} · ${lang}</span></div>`;
+    }
+  }
+  statsEl.innerHTML = html;
+}
+
+function buildFilterToggles() {
+  const seriesEl = document.getElementById('series-filters');
+  for (const s of SERIES) {
+    const btn = document.createElement('button');
+    btn.className = 'toggle active';
+    btn.style.setProperty('--tone', s.tone);
+    btn.style.setProperty('--tone-bg', s.bg);
+    btn.innerHTML = `<span class="dot" style="background:${s.tone}"></span>${s.key}`;
+    btn.onclick = () => {
+      if (activeSeries.has(s.key)) { activeSeries.delete(s.key); btn.classList.remove('active'); }
+      else { activeSeries.add(s.key); btn.classList.add('active'); }
+      render();
+    };
+    seriesEl.appendChild(btn);
+  }
+  const langEl = document.getElementById('lang-filters');
+  for (const lang of LANGS) {
+    const btn = document.createElement('button');
+    btn.className = 'toggle active';
+    btn.style.setProperty('--tone', 'var(--accent)');
+    btn.style.setProperty('--tone-bg', 'var(--surface-2)');
+    btn.textContent = lang;
+    btn.onclick = () => {
+      if (activeLangs.has(lang)) { activeLangs.delete(lang); btn.classList.remove('active'); }
+      else { activeLangs.add(lang); btn.classList.add('active'); }
+      render();
+    };
+    langEl.appendChild(btn);
+  }
+}
+
+function playRecord(r, btn, row) {
+  const audio = document.getElementById('audio');
+  const bar = document.getElementById('player-bar');
+  if (currentPlayBtn && currentPlayBtn !== btn) currentPlayBtn.classList.remove('is-playing');
+  if (currentRow && currentRow !== row) currentRow.classList.remove('playing');
+  audio.src = encodeURI(r.rel);
+  audio.play().catch(() => {});
+  btn.classList.add('is-playing');
+  row.classList.add('playing');
+  currentPlayBtn = btn; currentRow = row;
+  document.getElementById('np-title').textContent = `${r.text} · ${r.model}`;
+  document.getElementById('np-sub').textContent = `${r.series} · ${r.lang} · ${r.param}${r.seed ? ' · seed ' + r.seed : ''}`;
+  bar.classList.add('visible');
+}
+
+document.getElementById('audio').addEventListener('ended', () => {
+  if (currentPlayBtn) currentPlayBtn.classList.remove('is-playing');
+  if (currentRow) currentRow.classList.remove('playing');
+});
+document.getElementById('audio').addEventListener('pause', () => {
+  if (currentPlayBtn) currentPlayBtn.classList.remove('is-playing');
+});
+document.getElementById('audio').addEventListener('play', () => {
+  if (currentPlayBtn) currentPlayBtn.classList.add('is-playing');
+});
+
+function render() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  let rows = records.filter(r =>
+    activeSeries.has(r.series) && activeLangs.has(r.lang) &&
+    activeModels.has(r.model) && activeParams.has(r.param) &&
+    (!q || (r.text + r.model + r.param).toLowerCase().includes(q))
+  );
+  rows.sort((a, b) => {
+    let av = a[sortKey] || '', bv = b[sortKey] || '';
+    return av < bv ? -sortDir : av > bv ? sortDir : 0;
+  });
+  document.getElementById('result-count').textContent = `${rows.length} / ${records.length} 筆`;
+  if (typeof updateStickyOffsets === 'function') requestAnimationFrame(updateStickyOffsets);
+
+  const tbody = document.getElementById('tbody');
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">沒有符合條件的紀錄</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = '';
+  for (const r of rows) {
+    const tone = seriesTone(r.series);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><button class="play-btn" title="播放">▶</button><span class="check">✓</span></td>
+      <td><span class="badge" style="background:${tone.bg};color:${tone.tone}"><span class="dot" style="background:${tone.tone}"></span>${r.series}</span></td>
+      <td>${r.lang}</td>
+      <td>${r.text}</td>
+      <td class="mono">${r.model}</td>
+      <td class="mono">${r.param}</td>
+      <td class="mono">${r.seed || '—'}</td>
+    `;
+    const btn = tr.querySelector('.play-btn');
+    btn.addEventListener('click', () => playRecord(r, btn, tr));
+    tbody.appendChild(tr);
+  }
+}
+
+document.querySelectorAll('thead th[data-key]').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if (sortKey === key) { sortDir *= -1; } else { sortKey = key; sortDir = 1; }
+    document.querySelectorAll('thead th').forEach(t => t.classList.remove('sorted'));
+    th.classList.add('sorted');
+    th.querySelector('.arrow').textContent = sortDir === 1 ? '↑' : '↓';
+    render();
+  });
+});
+document.getElementById('search').addEventListener('input', render);
+
+function updateStickyOffsets() {
+  // 只有 header 跟 controls 兩條 bar 是黏頂的（thead 不再黏頂，避免跟
+  // .table-wrap 的 overflow-x:auto 產生的捲動容器互相打架）。
+  const headerH = document.querySelector('header.top').getBoundingClientRect().height;
+  document.documentElement.style.setProperty('--header-h', headerH + 'px');
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.tab;
+    document.getElementById('tab-list').hidden = target !== 'list';
+    document.getElementById('tab-text').hidden = target !== 'text';
+    // 音檔正在播放時切分頁不強制停止，但把播放列收起來，避免蓋住文本對照內容
+    if (target === 'text') document.getElementById('player-bar').classList.remove('visible');
+    else if (!document.getElementById('audio').paused) document.getElementById('player-bar').classList.add('visible');
+    updateStickyOffsets();
+  });
+});
+
+buildStats();
+buildFilterToggles();
+buildMultiselect('model-filter', '模型', ALL_MODELS, activeModels);
+buildMultiselect('param-filter', '參數', ALL_PARAMS, activeParams);
+render();
+updateStickyOffsets();
+window.addEventListener('resize', updateStickyOffsets);
+// 統計卡片／篩選按鈕的實際列數要等字型與版面完成才量得準，下一輪再校正一次
+requestAnimationFrame(updateStickyOffsets);
+setTimeout(updateStickyOffsets, 200);
+</script>
+</body>
+</html>
